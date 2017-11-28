@@ -1,0 +1,5 @@
+from DataGatherer import ScrapeRainchasersRivers
+from MapCoordConversion import MeteoxConversion
+
+ScrapeRainchasersRivers.getRiversJson()
+MeteoxConversion.updateRivers()
