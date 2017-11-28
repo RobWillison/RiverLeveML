@@ -19,7 +19,8 @@ def loadData(riverId):
     cursor.execute(sql, (riverId))
     return pickle.loads(cursor.fetchone()['data'])
 
-def train(riverId):
+def train(riverId, config_id=1):
+    config = getConfig(config_id)
     data = loadData(riverId)
     data_X = data[0]
     data_y = data[1]
@@ -31,20 +32,20 @@ def train(riverId):
     np.random.set_state(rng_state)
     np.random.shuffle(data_y)
 
-    train_X = np.array(data_X[:150])
-    train_y = np.array(data_y[:150])
+    train_X = np.array(data_X[:250])
+    train_y = np.array(data_y[:250])
 
-    test_X = np.array(data_X[150:])
-    test_y = np.array(data_y[150:])
+    test_X = np.array(data_X[50:])
+    test_y = np.array(data_y[50:])
 
     # design network
     model = Sequential()
-    model.add(LSTM(750, input_shape=(train_X.shape[1], train_X.shape[2])))
-    model.add(Dense(1))
+    model.add(LSTM(config['lstm_layers'], input_shape=(train_X.shape[1], train_X.shape[2])))
+    model.add(Dense(config['dense_layers']))
     model.compile(loss='mae', optimizer='adam')
 
     # fit network
-    history = model.fit(train_X, train_y, epochs=200, batch_size=72, validation_data=(test_X, test_y), verbose=0, shuffle=False)
+    history = model.fit(train_X, train_y, epochs=config['epochs'], batch_size=72, validation_data=(test_X, test_y), verbose=0, shuffle=False)
     # plot history
     # make a prediction
     yhat = model.predict(test_X)
@@ -61,6 +62,12 @@ def train(riverId):
     print('Test RMSE: %.3f' % rmse)
 
     robModel = RobModel(riverId).set_model(model, rainScaler, riverScaler).save()
+
+def getConfig(id):
+    cursor = db_config.cnx.cursor()
+    sql = 'SELECT * FROM model_configs WHERE id = %s'
+    cursor.execute(sql, (id))
+    return cursor.fetchone()
 
 
 def getModel(riverId):
