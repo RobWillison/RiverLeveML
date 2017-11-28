@@ -187,9 +187,8 @@ def predictNextStep(previousRiverLevels, time, model, riverData):
 
     return predictedRiverLevel
 
-def predictNext7days(riverLevels, timestamps, start, riverData):
+def predictNext7days(riverLevels, timestamps, start, riverData, model):
     step = 3600
-    model = Model.getModel(riverData['id'])
     actualLevels = []
 
     for i in range(168):
@@ -272,7 +271,7 @@ def predictAll():
     for river in riversToUpdate:
         predict(river['river_id'])
 
-def predict(riverId):
+def predict(riverId, configId=1):
     deleteOldPrediction(riverId)
     riverData = getRiverData(riverId)
     start = getLatestTimestamp(riverData)
@@ -280,7 +279,8 @@ def predict(riverId):
     riverLevels = []
     timestamps = []
     riverLevels, actualLevels, timestamps = loadPreviousData(start, riverData)
-    riverLevels, timestamps = predictNext7days(riverLevels, timestamps, start, riverData)
+    model = Model.getModel(riverData['id'], configId)
+    riverLevels, timestamps = predictNext7days(riverLevels, timestamps, start, riverData, model)
     writePredictionToDb(riverLevels, timestamps, start, riverData)
 
 def deleteOldPrediction(riverId):

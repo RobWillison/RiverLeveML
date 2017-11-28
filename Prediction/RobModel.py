@@ -8,9 +8,11 @@ class RobModel:
     rainScaler = None
     riverScaler = None
     riverId = None
+    configId = None
 
-    def __init__(self, riverId):
+    def __init__(self, riverId, configId=1):
         self.riverId = riverId
+        self.configId = configId
 
     def set_model(self, model, rainScaler, riverScaler):
         self.model = model
@@ -20,8 +22,8 @@ class RobModel:
 
     def load(self):
         cursor = db_config.cnx.cursor()
-        sql = 'SELECT model FROM training_data WHERE river_id = %s'
-        cursor.execute(sql, (self.riverId))
+        sql = 'SELECT path FROM models WHERE model_config_id = %s AND river_id = %s'
+        cursor.execute(sql, (self.config_id, self.riverId))
         model = pickle.loads(cursor.fetchone()['model'])
         self.model = load_model(model[2])
         self.rainScaler = model[0]
@@ -30,10 +32,12 @@ class RobModel:
 
 
     def save(self):
-        path = 'Data/Models/river' + str(self.riverId) + '.h5'
+        path = 'Data/Models/river' + str(self.riverId) + '-' + str(self.configId) + '.h5'
         self.model.save(path)
         model = [self.rainScaler, self.riverScaler, path]
         modelString = pickle.dumps(model)
+
+        self.add_model(path)
 
         cursor = db_config.cnx.cursor()
         sql = 'UPDATE training_data SET model = %s WHERE river_id = %s'
@@ -41,6 +45,11 @@ class RobModel:
         db_config.cnx.commit()
         return self
 
+    def add_model(self, path):
+        cursor = db_config.cnx.cursor()
+        sql = 'REPLACE INTO models (river_id, model_config_id, model_path, created_at, updated_at) VALUES (%s, %s, %s, NOW(), NOW())'
+        cursor.execute(sql, (self.riverId, self.configId, path))
+        db_config.cnx.commit()
 
     def predict(self, feature):
         print(feature)

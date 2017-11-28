@@ -19,8 +19,8 @@ def loadData(riverId):
     cursor.execute(sql, (riverId))
     return pickle.loads(cursor.fetchone()['data'])
 
-def train(riverId, config_id=1):
-    config = getConfig(config_id)
+def train(riverId, configId=1):
+    config = getConfig(configId)
     data = loadData(riverId)
     data_X = data[0]
     data_y = data[1]
@@ -61,7 +61,7 @@ def train(riverId, config_id=1):
     rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
     print('Test RMSE: %.3f' % rmse)
 
-    robModel = RobModel(riverId).set_model(model, rainScaler, riverScaler).save()
+    robModel = RobModel(riverId, configId).set_model(model, rainScaler, riverScaler).save()
 
 def getConfig(id):
     cursor = db_config.cnx.cursor()
@@ -70,5 +70,5 @@ def getConfig(id):
     return cursor.fetchone()
 
 
-def getModel(riverId):
-    return RobModel(riverId).load()
+def getModel(riverId, configId=1):
+    return RobModel(riverId, configId).load()
