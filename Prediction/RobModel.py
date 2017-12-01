@@ -22,33 +22,32 @@ class RobModel:
 
     def load(self):
         cursor = db_config.cnx.cursor()
-        sql = 'SELECT path FROM models WHERE model_config_id = %s AND river_id = %s'
-        cursor.execute(sql, (self.config_id, self.riverId))
-        model = pickle.loads(cursor.fetchone()['model'])
-        self.model = load_model(model[2])
-        self.rainScaler = model[0]
-        self.riverScaler = model[1]
+        sql = 'SELECT model_path, scalers FROM models WHERE model_config_id = %s AND river_id = %s'
+        cursor.execute(sql, (self.configId, self.riverId))
+        result = cursor.fetchone()
+        scalers = pickle.loads(result['scalers'])
+        self.model = load_model(result['model_path'])
+        self.rainScaler = scalers[0]
+        self.riverScaler = scalers[1]
         return self
 
 
     def save(self):
         path = 'Data/Models/river' + str(self.riverId) + '-' + str(self.configId) + '.h5'
         self.model.save(path)
-        model = [self.rainScaler, self.riverScaler, path]
-        modelString = pickle.dumps(model)
+        scalers = [self.rainScaler, self.riverScaler]
+        scalers = pickle.dumps(scalers)
 
-        self.add_model(path)
+        self.add_model(path, scalers)
 
         cursor = db_config.cnx.cursor()
-        sql = 'UPDATE training_data SET model = %s WHERE river_id = %s'
-        cursor.execute(sql, (modelString, self.riverId))
-        db_config.cnx.commit()
+
         return self
 
-    def add_model(self, path):
+    def add_model(self, path, scalers):
         cursor = db_config.cnx.cursor()
-        sql = 'REPLACE INTO models (river_id, model_config_id, model_path, created_at, updated_at) VALUES (%s, %s, %s, NOW(), NOW())'
-        cursor.execute(sql, (self.riverId, self.configId, path))
+        sql = 'REPLACE INTO models (river_id, model_config_id, model_path, scalers, created_at, updated_at) VALUES (%s, %s, %s, %s, NOW(), NOW())'
+        cursor.execute(sql, (self.riverId, self.configId, path, scalers))
         db_config.cnx.commit()
 
     def predict(self, feature):

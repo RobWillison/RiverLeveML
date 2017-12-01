@@ -6,6 +6,7 @@ from DataGatherer import RainForecastGatherer
 from Prediction import TrainingData
 from Prediction import Model
 from Prediction import Predict
+from AcuracyCalculator import Calculate
 import time
 import traceback
 import subprocess

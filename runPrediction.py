@@ -1,3 +1,3 @@
 from Prediction import Predict
 
-Predict.predictAll()
+Predict.predict(1)

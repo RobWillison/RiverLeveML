@@ -238,55 +238,43 @@ def getLatestTimestamp(riverData):
 
     return riverLatest['timestamp']
 
-def writePredictionToDb(riverLevels, timestamps, start, riverData):
+def writePredictionToDb(riverLevels, timestamps, start, riverData, live):
     predictRunTime = datetime.now()
     cursor = db_config.cnx.cursor()
-    sql = "INSERT INTO predictions (created_date, river_id) VALUES (%s, %s)"
-    cursor.execute(sql, (predictRunTime, riverData['id']))
+    sql = "INSERT INTO predictions (created_date, model_id, live) VALUES (%s, %s, %s)"
+    cursor.execute(sql, (predictRunTime, riverData['model_id'], live))
     prediction_id = cursor.lastrowid
 
     timestamps = list(filter(lambda x: x > start, timestamps))
     riverLevels = riverLevels[-len(timestamps):]
     riverLevels = filterRiverLevel(riverLevels)
     for i in range(len(riverLevels)):
-        sql = "REPLACE INTO predicted_river_levels (river_id, predict_time, prediction_id, river_level) VALUES (%s, %s, %s, %s)"
-        cursor.execute(sql, (riverData['id'], datetime.fromtimestamp(timestamps[i]), prediction_id, float(riverLevels[i])))
+        sql = "REPLACE INTO predicted_river_levels (predict_time, prediction_id, river_level) VALUES (%s, %s, %s)"
+        cursor.execute(sql, (datetime.fromtimestamp(timestamps[i]), prediction_id, float(riverLevels[i])))
         db_config.cnx.commit()
 
-def getRiverData(riverId):
+def getRiverData(riverId, configId):
     cursor = db_config.cnx.cursor()
-    sql = 'SELECT * FROM rivers WHERE id = %s'
-    cursor.execute(sql, (riverId))
+    sql = 'SELECT *, models.id as `model_id` FROM rivers INNER JOIN models ON models.river_id = rivers.id AND model_config_id = %s WHERE rivers.id = %s'
+    cursor.execute(sql, (riverId, configId))
     return cursor.fetchone()
 
-def getRiversToPredict():
-    cursor = db_config.cnx.cursor()
-    sql = 'SELECT river_id FROM training_data WHERE model IS NOT NULL'
-    cursor.execute(sql)
-    return cursor.fetchall()
-
-def predictAll():
-    riversToUpdate = getRiversToPredict()
-
-    for river in riversToUpdate:
-        predict(river['river_id'])
-
-def predict(riverId, configId=1):
+def predict(riverId, configId=1, live=1):
     deleteOldPrediction(riverId)
-    riverData = getRiverData(riverId)
+    riverData = getRiverData(riverId, configId)
     start = getLatestTimestamp(riverData)
     print(start)
     riverLevels = []
     timestamps = []
     riverLevels, actualLevels, timestamps = loadPreviousData(start, riverData)
-    model = Model.getModel(riverData['id'], configId)
+    model = Model.getModel(riverId, configId)
     riverLevels, timestamps = predictNext7days(riverLevels, timestamps, start, riverData, model)
-    writePredictionToDb(riverLevels, timestamps, start, riverData)
+    writePredictionToDb(riverLevels, timestamps, start, riverData, live)
 
 def deleteOldPrediction(riverId):
     cursor = db_config.cnx.cursor()
-    sql = 'DELETE FROM predicted_river_levels WHERE river_id = %s AND predict_time < DATE_ADD(NOW(), INTERVAL -1 MONTH)'
-    cursor.execute(sql, (riverId))
+    sql = 'DELETE FROM predicted_river_levels WHERE predict_time < DATE_ADD(NOW(), INTERVAL -1 MONTH)'
+    cursor.execute(sql)
     db_config.cnx.commit()
 
 def filterRiverLevel(riverLevels, alpha=1):
