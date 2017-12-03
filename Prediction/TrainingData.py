@@ -171,7 +171,7 @@ def getTrainingData(start, riverData):
     riverScaler = fitRiverLevelMinMaxScaler(riverData['station'])
 
     #Max 8447
-    for i in range(200):
+    for i in range(1000):
         feature, actual = getFeatureForTime(start - step * i, riverData, riverScaler, rainScaler)
         trainingData.append([feature])
         outputValues.append(actual)
