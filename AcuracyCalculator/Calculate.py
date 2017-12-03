@@ -32,7 +32,7 @@ def getRiverData(riverId):
 
 def getPredictions():
     cursor = db_config.cnx.cursor()
-    sql = 'SELECT * FROM predictions WHERE created_at > CURDATE() - INTERVAL 8 DAY AND acuracy_info IS NULL'
+    sql = 'SELECT * FROM predictions INNER JOIN models ON model_id = models.id WHERE predictions.created_at > CURDATE() - INTERVAL 8 DAY AND acuracy_info IS NULL'
     cursor.execute(sql)
     result = cursor.fetchall()
     if result == None:
@@ -75,9 +75,9 @@ def calculateAllAcuracys():
 
     for prediction in predictions:
         river = getRiverData(prediction['river_id'])
-        try:
-            data = calculateAcuracys(river, prediction['id'])
-            if data != None:
-                writeAcuracyToDb(data, prediction['id'])
-        except Exception as ex:
-            print(ex)
+        # try:
+        data = calculateAcuracys(river, prediction['id'])
+        if data != None:
+            writeAcuracyToDb(data, prediction['id'])
+        # except Exception as ex:
+        #     print(ex)
