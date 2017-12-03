@@ -157,6 +157,13 @@ def getRiverData(riverId):
 
 def updateTrainingDataFile(riverData):
     start = getLatestTimestamp()
+    trainingData, outputValues, rainScaler, riverScaler = getTrainingData(start, riverData)
+
+    data = pickle.dumps([trainingData, outputValues, rainScaler, riverScaler])
+    print(len(trainingData), len(trainingData[0]), len(trainingData[0][0]))
+    saveData(data, riverData['id'])
+
+def getTrainingData(start, riverData):
     step = 3600
     trainingData = []
     outputValues = []
@@ -169,10 +176,7 @@ def updateTrainingDataFile(riverData):
         trainingData.append([feature])
         outputValues.append(actual)
 
-    data = pickle.dumps([trainingData, outputValues, rainScaler, riverScaler])
-    print(len(trainingData), len(trainingData[0]), len(trainingData[0][0]))
-    saveData(data, riverData['id'])
-
+    return trainingData, outputValues, rainScaler, riverScaler
 
 def saveData(data, river_id):
     cursor = db_config.cnx.cursor()

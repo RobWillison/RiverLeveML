@@ -242,7 +242,8 @@ def writePredictionToDb(riverLevels, timestamps, start, riverData, live):
     predictRunTime = datetime.now()
     cursor = db_config.cnx.cursor()
     sql = "INSERT INTO predictions (created_date, model_id, river_id, live) VALUES (%s, %s, %s, %s)"
-    cursor.execute(sql, (predictRunTime, riverData['model_id'], riverData['river_id'], live))
+    print(riverData)
+    cursor.execute(sql, (predictRunTime, riverData['model_id'], riverData['id'], live))
     prediction_id = cursor.lastrowid
 
     timestamps = list(filter(lambda x: x > start, timestamps))
@@ -254,20 +255,26 @@ def writePredictionToDb(riverLevels, timestamps, start, riverData, live):
         db_config.cnx.commit()
 
 def getRiverData(riverId, configId):
+    print(riverId, configId)
     cursor = db_config.cnx.cursor()
-    sql = 'SELECT *, models.id as `model_id` FROM rivers INNER JOIN models ON models.river_id = rivers.id AND model_config_id = %s WHERE rivers.id = %s'
-    cursor.execute(sql, (riverId, configId))
+    sql = 'SELECT *, models.id as `model_id` FROM rivers INNER JOIN models ON models.river_id = rivers.id AND model_config_id = %s WHERE rivers.id = %s ORDER BY models.id DESC LIMIT 1'
+    cursor.execute(sql, (configId, riverId))
     return cursor.fetchone()
 
-def predict(riverId, configId=1, live=1):
+def predict(riverId, configId=1, live=1, model=None, start=None):
     deleteOldPrediction(riverId)
     riverData = getRiverData(riverId, configId)
-    start = getLatestTimestamp(riverData)
+    print(riverData)
+    if start == None:
+        start = getLatestTimestamp(riverData)
     print(start)
     riverLevels = []
     timestamps = []
     riverLevels, actualLevels, timestamps = loadPreviousData(start, riverData)
-    model = Model.getModel(riverId, configId)
+
+    if model == None:
+        model = Model.getModel(riverId, configId)
+
     riverLevels, timestamps = predictNext7days(riverLevels, timestamps, start, riverData, model)
     writePredictionToDb(riverLevels, timestamps, start, riverData, live)
 
