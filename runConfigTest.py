@@ -1,0 +1,3 @@
+from ModelConfigTester import ModelConfigTest
+
+ModelConfigTest.testModelConfig(2)
