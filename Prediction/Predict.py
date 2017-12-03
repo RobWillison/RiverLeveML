@@ -241,8 +241,8 @@ def getLatestTimestamp(riverData):
 def writePredictionToDb(riverLevels, timestamps, start, riverData, live):
     predictRunTime = datetime.now()
     cursor = db_config.cnx.cursor()
-    sql = "INSERT INTO predictions (created_date, model_id, live) VALUES (%s, %s, %s)"
-    cursor.execute(sql, (predictRunTime, riverData['model_id'], live))
+    sql = "INSERT INTO predictions (created_date, model_id, river_id, live) VALUES (%s, %s, %s, %s)"
+    cursor.execute(sql, (predictRunTime, riverData['model_id'], riverData['river_id'], live))
     prediction_id = cursor.lastrowid
 
     timestamps = list(filter(lambda x: x > start, timestamps))
