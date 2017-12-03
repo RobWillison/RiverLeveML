@@ -22,7 +22,7 @@ class RobModel:
 
     def load(self):
         cursor = db_config.cnx.cursor()
-        sql = 'SELECT model_path, scalers FROM models WHERE model_config_id = %s AND river_id = %s'
+        sql = 'SELECT model_path, scalers FROM models WHERE model_config_id = %s AND river_id = %s ORDER BY id desc LIMIT 1'
         cursor.execute(sql, (self.configId, self.riverId))
         result = cursor.fetchone()
         scalers = pickle.loads(result['scalers'])
