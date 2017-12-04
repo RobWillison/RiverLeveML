@@ -31,7 +31,7 @@ def setError(job, error):
     db_config.cnx.commit()
 
 def nextJob():
-    sql = 'SELECT * FROM jobs WHERE last_run < DATE_ADD(NOW(), INTERVAL -`run_frequency` HOUR) OR last_run IS NULL ORDER BY priority, last_run ASC LIMIT 1'
+    sql = 'SELECT * FROM jobs WHERE last_run < DATE_ADD(NOW(), INTERVAL -`run_frequency` HOUR) OR last_run IS NULL ORDER BY (priority - TIMESTAMPDIFF(HOUR, last_start_time, NOW())), last_run ASC LIMIT 1'
     cursor = db_config.cnx.cursor()
     cursor.execute(sql, ())
     return cursor.fetchone()
