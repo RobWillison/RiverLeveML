@@ -31,8 +31,8 @@ def setError(job, error):
     db_config.cnx.commit()
 
 def nextJob(previous):
+    cursor = db_config.cnx.cursor()
     if previous != None:
-        cursor = db_config.cnx.cursor()
         sql = 'SELECT * FROM jobs WHERE id IN (SELECT run_after FROM jobs WHERE id = %s)'
         cursor.execute(sql, (previous['id']))
         result = cursor.fetchone()
