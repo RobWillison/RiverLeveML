@@ -10,3 +10,4 @@ config = {
 }
 
 cnx = pymysql.connect(**config)
+cnx.autocommit(True);
