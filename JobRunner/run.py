@@ -30,9 +30,16 @@ def setError(job, error):
     cursor.execute(sql, (str(error), job['id']))
     db_config.cnx.commit()
 
-def nextJob():
-    sql = 'SELECT * FROM jobs WHERE last_run < DATE_ADD(NOW(), INTERVAL -`run_frequency` HOUR) OR last_run IS NULL ORDER BY (priority - TIMESTAMPDIFF(HOUR, last_start_time, NOW())), last_run ASC LIMIT 1'
+def nextJob(previous):
     cursor = db_config.cnx.cursor()
+    sql 'SELECT * FROM jobs WHERE id IN (SELECT run_after FROM jobs WHERE id = %s)'
+    cursor.execute(sql, (previous['id']))
+    result = cursor.fetchone()
+    if result != None:
+        return result
+
+    sql = 'SELECT * FROM jobs WHERE last_run < DATE_ADD(NOW(), INTERVAL -`run_frequency` HOUR) OR last_run IS NULL ORDER BY (priority - TIMESTAMPDIFF(HOUR, last_start_time, NOW())), last_run ASC LIMIT 1'
+
     cursor.execute(sql, ())
     return cursor.fetchone()
 
@@ -41,9 +48,13 @@ def RunCommand(command):
     output, error = process.communicate()
     print(output)
 
+def finish(job):
+    setError(job, '')
+    setLastRun(job)
+
 def run():
     while (True):
-        job = nextJob()
+        job = nextJob(job)
         if job == None:
             print('No Jobs')
             time.sleep(60)
@@ -55,5 +66,4 @@ def run():
         except Exception as e:
             setError(job, traceback.format_exc())
         finally:
-            setError(job, '')
-            setLastRun(job)
+            finish(job)
