@@ -32,7 +32,7 @@ def getRiverData(riverId):
 
 def getPredictions():
     cursor = db_config.cnx.cursor()
-    sql = 'SELECT * FROM predictions WHERE predictions.created_at > CURDATE() - INTERVAL 8 DAY AND acuracy_info IS NULL'
+    sql = 'SELECT * FROM predictions WHERE predictions.created_at < CURDATE() - INTERVAL 8 DAY AND acuracy_info IS NULL'
     cursor.execute(sql)
     result = cursor.fetchall()
     if result == None:
@@ -78,7 +78,7 @@ def calculateAllAcuracys():
     for prediction in predictions:
         if prediction['river_id'] == None:
             continue
-            
+
         river = getRiverData(prediction['river_id'])
         try:
             data = calculateAcuracys(river, prediction['id'])
