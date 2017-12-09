@@ -10,6 +10,8 @@ from keras.layers import LSTM
 from math import sqrt
 from numpy import concatenate
 from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
+import numpy
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -24,7 +26,7 @@ def train(riverId, configId=1, data=None):
 
     if data == None:
         data = loadData(riverId)
-
+    print(len(data[0]))
     data_X = data[0]
     data_y = data[1]
     rainScaler = data[2]
@@ -35,11 +37,12 @@ def train(riverId, configId=1, data=None):
     np.random.set_state(rng_state)
     np.random.shuffle(data_y)
 
-    train_X = np.array(data_X[:250])
-    train_y = np.array(data_y[:250])
+    split = int(len(data_X) * 0.8)
+    train_X = np.array(data_X[:split])
+    train_y = np.array(data_y[:split])
 
-    test_X = np.array(data_X[50:])
-    test_y = np.array(data_y[50:])
+    test_X = np.array(data_X[split:])
+    test_y = np.array(data_y[split:])
 
     # design network
     model = Sequential()
@@ -50,6 +53,11 @@ def train(riverId, configId=1, data=None):
     # fit network
     history = model.fit(train_X, train_y, epochs=config['epochs'], batch_size=72, validation_data=(test_X, test_y), verbose=0, shuffle=False)
     # plot history
+    # plot history
+    pyplot.plot(history.history['loss'], label='train')
+    pyplot.plot(history.history['val_loss'], label='test')
+    pyplot.legend()
+    pyplot.show()
     # make a prediction
     yhat = model.predict(test_X)
     test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
@@ -66,7 +74,7 @@ def train(riverId, configId=1, data=None):
 
     robModel = RobModel(riverId, configId).set_model(model, rainScaler, riverScaler).save()
     return robModel
-    
+
 def getConfig(id):
     cursor = db_config.cnx.cursor()
     sql = 'SELECT * FROM model_configs WHERE id = %s'
