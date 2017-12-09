@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from DataGatherer import RainGatherer
 from DataGatherer import RiverLevelGatherer
 from DataGatherer import RainForecastGatherer
+from DataGatherer import DarkSkyGatherer
 from Prediction import TrainingData
 from Prediction import Model
 from Prediction import Predict
