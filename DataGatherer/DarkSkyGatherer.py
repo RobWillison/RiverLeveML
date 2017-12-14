@@ -39,10 +39,10 @@ def saveData(data, riverId):
 
 def collectPastDay():
     rivers = allRivers()
+    now = datetime.now().replace(hour=0, minute=0)
+    start = int(time.mktime(now.timetuple()))
+    start -= 86400
     for river in rivers:
-        now = datetime.now().replace(hour=0, minute=0)
-        start = int(time.mktime(now.timetuple()))
-        start -= 86400
         getJson(river, start)
 
 
