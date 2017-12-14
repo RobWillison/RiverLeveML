@@ -50,8 +50,5 @@ def collectForecastData():
     rivers = allRivers()
     for river in rivers:
         now = datetime.now().replace(hour=0, minute=0)
-        start = int(time.mktime(now.timetuple()))
-        days = 7
-        for i in range(7):
-            getJson(river, start)
-            start += 86400
+        now = int(time.mktime(now.timetuple()))
+        getJson(river, now)
