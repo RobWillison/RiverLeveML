@@ -46,12 +46,12 @@ def train(riverId, configId=1, data=None):
 
     # design network
     model = Sequential()
-    model.add(LSTM(config['lstm_layers'], input_shape=(train_X.shape[1], train_X.shape[2])))
-    model.add(Dense(config['dense_layers']))
+    model.add(LSTM(100, input_shape=(train_X.shape[1], train_X.shape[2])))
+    model.add(Dense(1))
     model.compile(loss='mae', optimizer='adam')
 
     # fit network
-    history = model.fit(train_X, train_y, epochs=config['epochs'], batch_size=72, validation_data=(test_X, test_y), verbose=0, shuffle=False)
+    history = model.fit(train_X, train_y, epochs=100, batch_size=10, validation_data=(test_X, test_y), verbose=0, shuffle=False)
     # plot history
     # plot history
     pyplot.plot(history.history['loss'], label='train')
