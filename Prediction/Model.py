@@ -51,7 +51,7 @@ def train(riverId, configId=1, data=None):
     model.compile(loss='mae', optimizer='adam')
 
     # fit network
-    history = model.fit(train_X, train_y, epochs=100, batch_size=10, validation_data=(test_X, test_y), verbose=0, shuffle=False)
+    history = model.fit(train_X, train_y, epochs=100, batch_size=72, validation_data=(test_X, test_y), verbose=0, shuffle=False)
     # plot history
     # plot history
     pyplot.plot(history.history['loss'], label='train')

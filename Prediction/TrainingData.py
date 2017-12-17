@@ -5,13 +5,13 @@ from sklearn.preprocessing import MinMaxScaler
 
 def getRiverLevelData(timestamp, riverData, scaler):
     cursor = db_config.cnx.cursor()
-    sqlBefore = "SELECT * FROM rainData.river_data WHERE `timestamp` < %s AND station = %s ORDER BY `timestamp` DESC LIMIT 1"
-    sqlAfter = "SELECT * FROM rainData.river_data WHERE `timestamp` > %s AND station = %s ORDER BY `timestamp` ASC LIMIT 1"
+    sqlBefore = "SELECT * FROM rainData.river_data WHERE `timestamp` < %s AND river_id = %s ORDER BY `timestamp` DESC LIMIT 1"
+    sqlAfter = "SELECT * FROM rainData.river_data WHERE `timestamp` > %s AND river_id = %s ORDER BY `timestamp` ASC LIMIT 1"
 
-    cursor.execute(sqlBefore, (timestamp, riverData['station']))
+    cursor.execute(sqlBefore, (timestamp, riverData['id']))
     resultBefore = cursor.fetchone()
 
-    cursor.execute(sqlAfter, (timestamp, riverData['station']))
+    cursor.execute(sqlAfter, (timestamp, riverData['id']))
     resultAfter = cursor.fetchone()
 
     if resultAfter == None:
@@ -88,24 +88,13 @@ def getFeatureForTime(timestamp, riverData, riverScaler, rainScaler):
     Pricip4Hour = getRainLevelDataForTime(timestamp - 3600 * 4, riverData, rainScaler)
     Pricip5Hour = getRainLevelDataForTime(timestamp - 3600 * 5, riverData, rainScaler)
     Pricip6Hour = getRainLevelDataForTime(timestamp - 3600 * 6, riverData, rainScaler)
-    Pricip7Hour = getRainLevelDataForTime(timestamp - 3600 * 7, riverData, rainScaler)
-    Pricip8Hour = getRainLevelDataForTime(timestamp - 3600 * 8, riverData, rainScaler)
-    Pricip9Hour = getRainLevelDataForTime(timestamp - 3600 * 9, riverData, rainScaler)
-    Pricip10Hour = getRainLevelDataForTime(timestamp - 3600 * 10, riverData, rainScaler)
-    Pricip11Hour = getRainLevelDataForTime(timestamp - 3600 * 11, riverData, rainScaler)
     RiverLevel1HourAgo = getRiverLevelData(timestamp - 3600 * 1, riverData, riverScaler)
     RiverLevel2HourAgo = getRiverLevelData(timestamp - 3600 * 2, riverData, riverScaler)
     RiverLevel3HourAgo = getRiverLevelData(timestamp - 3600 * 3, riverData, riverScaler)
     RiverLevel4HourAgo = getRiverLevelData(timestamp - 3600 * 4, riverData, riverScaler)
     RiverLevel5HourAgo = getRiverLevelData(timestamp - 3600 * 5, riverData, riverScaler)
     RiverLevel6HourAgo = getRiverLevelData(timestamp - 3600 * 6, riverData, riverScaler)
-    RiverLevel7HourAgo = getRiverLevelData(timestamp - 3600 * 7, riverData, riverScaler)
-    RiverLevel8HourAgo = getRiverLevelData(timestamp - 3600 * 8, riverData, riverScaler)
-    RiverLevel9HourAgo = getRiverLevelData(timestamp - 3600 * 9, riverData, riverScaler)
-    RiverLevel10HourAgo = getRiverLevelData(timestamp - 3600 * 10, riverData, riverScaler)
-    RiverLevel11HourAgo = getRiverLevelData(timestamp - 3600 * 11, riverData, riverScaler)
-    RiverLevel12HourAgo = getRiverLevelData(timestamp - 3600 * 12, riverData, riverScaler)
-
+    print(timestamp)
     actual = getRiverLevelData(timestamp, riverData, riverScaler)
 
     return [
@@ -115,36 +104,38 @@ def getFeatureForTime(timestamp, riverData, riverScaler, rainScaler):
     Pricip3Hour,
     Pricip4Hour,
     Pricip5Hour,
-    Pricip6Hour,
-    Pricip7Hour,
-    Pricip8Hour,
-    Pricip9Hour,
-    Pricip10Hour,
-    Pricip11Hour,
     RiverLevel1HourAgo,
     RiverLevel2HourAgo,
     RiverLevel3HourAgo,
     RiverLevel4HourAgo,
     RiverLevel5HourAgo,
     RiverLevel6HourAgo,
-    RiverLevel7HourAgo,
-    RiverLevel8HourAgo,
-    RiverLevel9HourAgo,
-    RiverLevel10HourAgo,
-    RiverLevel11HourAgo,
-    RiverLevel12HourAgo
     ], actual
 
-def getLatestTimestamp():
+def getLatestTimestamp(areaId, riverId):
     cursor = db_config.cnx.cursor()
-    sql = "SELECT timestamp FROM rain_data ORDER BY time_string DESC LIMIT 1"
-    cursor.execute(sql)
+    sql = "SELECT timestamp FROM rain_data WHERE area_id = %s ORDER BY time_string DESC LIMIT 1"
+    cursor.execute(sql, (areaId))
     rainLatest = cursor.fetchone()
-    sql = "SELECT timestamp FROM river_data ORDER BY time_string DESC LIMIT 1"
-    cursor.execute(sql)
+    sql = "SELECT timestamp FROM river_data WHERE river_id = %s ORDER BY time_string DESC LIMIT 1"
+    cursor.execute(sql, (riverId))
     riverLatest = cursor.fetchone()
 
     if rainLatest['timestamp'] < riverLatest['timestamp']:
+        return rainLatest['timestamp']
+
+    return riverLatest['timestamp']
+
+def getEarliestTimestamp(areaId, riverId):
+    cursor = db_config.cnx.cursor()
+    sql = "SELECT timestamp FROM rain_data WHERE area_id = %s ORDER BY timestamp ASC LIMIT 1"
+    cursor.execute(sql, (areaId))
+    rainLatest = cursor.fetchone()
+    sql = "SELECT timestamp FROM river_data WHERE river_id = %s ORDER BY timestamp ASC LIMIT 1"
+    cursor.execute(sql, (riverId))
+    riverLatest = cursor.fetchone()
+
+    if rainLatest['timestamp'] > riverLatest['timestamp']:
         return rainLatest['timestamp']
 
     return riverLatest['timestamp']
@@ -156,26 +147,28 @@ def getRiverData(riverId):
     return cursor.fetchone()
 
 def updateTrainingDataFile(riverData):
-    start = getLatestTimestamp()
-    trainingData, outputValues, rainScaler, riverScaler = getTrainingData(start, riverData)
+    start = getLatestTimestamp(riverData['rain_radar_area_id'], riverData['id'])
+    end = getEarliestTimestamp(riverData['rain_radar_area_id'], riverData['id'])
+    trainingData, outputValues, rainScaler, riverScaler = getTrainingData(start, end, riverData)
 
     data = pickle.dumps([trainingData, outputValues, rainScaler, riverScaler])
     print(len(trainingData), len(trainingData[0]), len(trainingData[0][0]))
     saveData(data, riverData['id'])
 
-def getTrainingData(start, riverData):
-    step = 3600
+def getTrainingData(start, end, riverData):
+    end = end + (12 * 3600)
     trainingData = []
     outputValues = []
     rainScaler = fitRainMinMaxScaler()
     riverScaler = fitRiverLevelMinMaxScaler(riverData['station'])
 
     #Max 8447
-    for i in range(1000):
-        feature, actual = getFeatureForTime(start - step * i, riverData, riverScaler, rainScaler)
+    while start > end:
+        feature, actual = getFeatureForTime(start, riverData, riverScaler, rainScaler)
+        start -= 3600
         trainingData.append([feature])
         outputValues.append(actual)
-
+    print('Traing Data Length' + str(len(trainingData)))
     return trainingData, outputValues, rainScaler, riverScaler
 
 def saveData(data, river_id):
@@ -190,4 +183,3 @@ def updateRiver(riverId):
     print(river)
 
     updateTrainingDataFile(river)
-

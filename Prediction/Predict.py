@@ -20,22 +20,23 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 
 def getRiverLevelData(timestamp, riverData):
     cursor = db_config.cnx.cursor()
-    sqlBefore = "SELECT * FROM rainData.river_data WHERE `timestamp` < %s AND station = %s ORDER BY `timestamp` DESC LIMIT 1"
-    sqlAfter = "SELECT * FROM rainData.river_data WHERE `timestamp` > %s AND station = %s ORDER BY `timestamp` ASC LIMIT 1"
+    sqlBefore = "SELECT * FROM rainData.river_data WHERE `timestamp` < %s AND river_id = %s ORDER BY `timestamp` DESC LIMIT 1"
+    sqlAfter = "SELECT * FROM rainData.river_data WHERE `timestamp` > %s AND river_id = %s ORDER BY `timestamp` ASC LIMIT 1"
 
-    cursor.execute(sqlBefore, (timestamp, riverData['station']))
+    cursor.execute(sqlBefore, (timestamp, riverData['id']))
     resultBefore = cursor.fetchone()
 
-    cursor.execute(sqlAfter, (timestamp, riverData['station']))
+    cursor.execute(sqlAfter, (timestamp, riverData['id']))
     resultAfter = cursor.fetchone()
 
     if resultAfter == None:
+        print(timestamp, resultBefore['river_level'])
         return resultBefore['river_level']
 
     interpolatedValue = resultBefore['river_level'] + \
         ((resultBefore['river_level'] - resultAfter['river_level']) / (resultBefore['timestamp'] - resultAfter['timestamp'])) * \
         (timestamp - resultBefore['timestamp'])
-
+    print(timestamp, interpolatedValue)
     return interpolatedValue
 
 def getRainLevelDataForTime(timestamp, riverData):
@@ -81,10 +82,30 @@ def matchForecastAndRealRainValues(source):
 
     return value
 
+def getRainLevelDataForTime(timestamp, riverData):
+    cursor = db_config.cnx.cursor()
+    sqlBefore = "SELECT * FROM rainData.rain_data WHERE `timestamp` < %s AND area_id = %s ORDER BY `timestamp` DESC LIMIT 1"
+    sqlAfter = "SELECT * FROM rainData.rain_data WHERE `timestamp` > %s AND area_id = %s ORDER BY `timestamp` ASC LIMIT 1"
+
+    cursor.execute(sqlBefore, (timestamp, riverData['rain_radar_area_id']))
+    resultBefore = cursor.fetchone()
+
+    cursor.execute(sqlAfter, (timestamp, riverData['rain_radar_area_id']))
+    resultAfter = cursor.fetchone()
+
+    if resultAfter == None:
+        return getRainLevelDataForTimeForecast(timestamp, riverData)
+
+    interpolatedValue = resultBefore['rain_value'] + \
+        ((resultBefore['rain_value'] - resultAfter['rain_value']) / (resultBefore['timestamp'] - resultAfter['timestamp'])) * \
+        (timestamp - resultBefore['timestamp'])
+
+    return interpolatedValue
+
 def getRainLevelDataForTimeForecast(timestamp, riverData):
     cursor = db_config.cnx.cursor()
-    sqlBefore = "SELECT * FROM rainData.rain_forecast_data WHERE `timestamp` < %s AND area_id = %s AND source IN (1, 3) ORDER BY `timestamp` DESC, `source` DESC LIMIT 1"
-    sqlAfter = "SELECT * FROM rainData.rain_forecast_data WHERE `timestamp` > %s AND area_id = %s AND source IN (1, 3) ORDER BY `timestamp` ASC, `source` DESC LIMIT 1"
+    sqlBefore = "SELECT * FROM rainData.rain_forecast_data WHERE `timestamp` < %s AND area_id = %s AND source IN (1) ORDER BY `timestamp` DESC, `source` DESC LIMIT 1"
+    sqlAfter = "SELECT * FROM rainData.rain_forecast_data WHERE `timestamp` > %s AND area_id = %s AND source IN (1) ORDER BY `timestamp` ASC, `source` DESC LIMIT 1"
 
     cursor.execute(sqlBefore, (timestamp, riverData['rain_radar_area_id']))
     resultBefore = cursor.fetchone()
@@ -133,23 +154,12 @@ def getFeatureForTime(timestamp, riverData, previousRiverLevels):
     Pricip4Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 4, riverData)
     Pricip5Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 5, riverData)
     Pricip6Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 6, riverData)
-    Pricip7Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 7, riverData)
-    Pricip8Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 8, riverData)
-    Pricip9Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 9, riverData)
-    Pricip10Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 10, riverData)
-    Pricip11Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 11, riverData)
     RiverLevel1HourAgo = previousRiverLevels[-1]
     RiverLevel2HourAgo = previousRiverLevels[-2]
     RiverLevel3HourAgo = previousRiverLevels[-3]
     RiverLevel4HourAgo = previousRiverLevels[-4]
     RiverLevel5HourAgo = previousRiverLevels[-5]
     RiverLevel6HourAgo = previousRiverLevels[-6]
-    RiverLevel7HourAgo = previousRiverLevels[-7]
-    RiverLevel8HourAgo = previousRiverLevels[-8]
-    RiverLevel9HourAgo = previousRiverLevels[-9]
-    RiverLevel10HourAgo = previousRiverLevels[-10]
-    RiverLevel11HourAgo = previousRiverLevels[-11]
-    RiverLevel12HourAgo = previousRiverLevels[-12]
 
     return [
     PricipNow,
@@ -158,24 +168,12 @@ def getFeatureForTime(timestamp, riverData, previousRiverLevels):
     Pricip3Hour,
     Pricip4Hour,
     Pricip5Hour,
-    Pricip6Hour,
-    Pricip7Hour,
-    Pricip8Hour,
-    Pricip9Hour,
-    Pricip10Hour,
-    Pricip11Hour,
     RiverLevel1HourAgo,
     RiverLevel2HourAgo,
     RiverLevel3HourAgo,
     RiverLevel4HourAgo,
     RiverLevel5HourAgo,
     RiverLevel6HourAgo,
-    RiverLevel7HourAgo,
-    RiverLevel8HourAgo,
-    RiverLevel9HourAgo,
-    RiverLevel10HourAgo,
-    RiverLevel11HourAgo,
-    RiverLevel12HourAgo
     ]
 
 
@@ -202,6 +200,7 @@ def predictNext7days(riverLevels, timestamps, start, riverData, model):
         #rain.append(getRainLevelData(start + step * i - 3600, start + step * i))
         # print(predictedRiverLevel)
         riverLevels.append(predictedRiverLevel)
+        print(predictedRiverLevel)
     return riverLevels, timestamps
 
 def loadPreviousData(start, riverData):
@@ -220,6 +219,7 @@ def loadPreviousData(start, riverData):
     riverLevels = list(riverDataPrevMonth[::-1])
     # rainLevels = list(rainDataPrevMonth[::-1])
     actualLevels = list(riverDataPrevMonth[::-1])
+    print(riverLevels)
     timestamps = timestamps[::-1]
 
     return riverLevels, actualLevels, timestamps
