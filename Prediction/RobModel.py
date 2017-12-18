@@ -52,8 +52,8 @@ class RobModel:
 
     def predict(self, feature):
         print(feature)
-        scaledRain = list(map(lambda x: self.rainScaler.transform([[x]])[0][0], feature[:6]))
-        scaledRiver = list(map(lambda x: self.riverScaler.transform([[x]])[0][0], feature[6:]))
-        scaledFeature = scaledRain + scaledRiver
-        prediction = self.model.predict(np.array([[scaledFeature]]))
-        return self.riverScaler.inverse_transform(prediction)[0][0]
+        # scaledRain = list(map(lambda x: self.rainScaler.transform([[x]])[0][0], feature[:12]))
+        # scaledRiver = list(map(lambda x: self.riverScaler.transform([[x]])[0][0], feature[12:]))
+        # scaledFeature = scaledRain + scaledRiver
+        prediction = self.model.predict(np.array([[feature]]))
+        return prediction[0][0]

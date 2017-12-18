@@ -147,19 +147,30 @@ def getRainLevelDataForecast(start, end, riverData):
     return rainValue / total
 
 def getFeatureForTime(timestamp, riverData, previousRiverLevels):
-    PricipNow = getRainLevelDataForTimeForecast(timestamp, riverData)
-    Pricip1Hour = getRainLevelDataForTimeForecast(timestamp - 3600, riverData)
-    Pricip2Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 2, riverData)
-    Pricip3Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 3, riverData)
-    Pricip4Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 4, riverData)
-    Pricip5Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 5, riverData)
-    Pricip6Hour = getRainLevelDataForTimeForecast(timestamp - 3600 * 6, riverData)
+    PricipNow = getRainLevelDataForTime(timestamp, riverData)
+    Pricip1Hour = getRainLevelDataForTime(timestamp - 3600, riverData)
+    Pricip2Hour = getRainLevelDataForTime(timestamp - 3600 * 2, riverData)
+    Pricip3Hour = getRainLevelDataForTime(timestamp - 3600 * 3, riverData)
+    Pricip4Hour = getRainLevelDataForTime(timestamp - 3600 * 4, riverData)
+    Pricip5Hour = getRainLevelDataForTime(timestamp - 3600 * 5, riverData)
+    Pricip6Hour = getRainLevelDataForTime(timestamp - 3600 * 6, riverData)
+    Pricip7Hour = getRainLevelDataForTime(timestamp - 3600 * 7, riverData)
+    Pricip8Hour = getRainLevelDataForTime(timestamp - 3600 * 8, riverData)
+    Pricip9Hour = getRainLevelDataForTime(timestamp - 3600 * 9, riverData)
+    Pricip10Hour = getRainLevelDataForTime(timestamp - 3600 * 10, riverData)
+    Pricip11Hour = getRainLevelDataForTime(timestamp - 3600 * 11, riverData)
     RiverLevel1HourAgo = previousRiverLevels[-1]
     RiverLevel2HourAgo = previousRiverLevels[-2]
     RiverLevel3HourAgo = previousRiverLevels[-3]
     RiverLevel4HourAgo = previousRiverLevels[-4]
     RiverLevel5HourAgo = previousRiverLevels[-5]
     RiverLevel6HourAgo = previousRiverLevels[-6]
+    RiverLevel7HourAgo = previousRiverLevels[-7]
+    RiverLevel8HourAgo = previousRiverLevels[-8]
+    RiverLevel9HourAgo = previousRiverLevels[-9]
+    RiverLevel10HourAgo = previousRiverLevels[-10]
+    RiverLevel11HourAgo = previousRiverLevels[-11]
+    RiverLevel12HourAgo = previousRiverLevels[-12]
 
     return [
     PricipNow,
@@ -168,12 +179,24 @@ def getFeatureForTime(timestamp, riverData, previousRiverLevels):
     Pricip3Hour,
     Pricip4Hour,
     Pricip5Hour,
+    Pricip6Hour,
+    Pricip7Hour,
+    Pricip8Hour,
+    Pricip9Hour,
+    Pricip10Hour,
+    Pricip11Hour,
     RiverLevel1HourAgo,
     RiverLevel2HourAgo,
     RiverLevel3HourAgo,
     RiverLevel4HourAgo,
     RiverLevel5HourAgo,
     RiverLevel6HourAgo,
+    RiverLevel7HourAgo,
+    RiverLevel8HourAgo,
+    RiverLevel9HourAgo,
+    RiverLevel10HourAgo,
+    RiverLevel11HourAgo,
+    RiverLevel12HourAgo
     ]
 
 

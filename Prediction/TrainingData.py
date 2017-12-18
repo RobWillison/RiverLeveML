@@ -21,7 +21,7 @@ def getRiverLevelData(timestamp, riverData, scaler):
         ((resultBefore['river_level'] - resultAfter['river_level']) / (resultBefore['timestamp'] - resultAfter['timestamp'])) * \
         (timestamp - resultBefore['timestamp'])
 
-    return scaler.transform([[interpolatedValue]])[0][0]
+    return interpolatedValue
 
 def getRainLevelDataForTime(timestamp, riverData, scaler):
     cursor = db_config.cnx.cursor()
@@ -41,7 +41,7 @@ def getRainLevelDataForTime(timestamp, riverData, scaler):
         ((resultBefore['rain_value'] - resultAfter['rain_value']) / (resultBefore['timestamp'] - resultAfter['timestamp'])) * \
         (timestamp - resultBefore['timestamp'])
 
-    return scaler.transform([[interpolatedValue]])[0][0]
+    return interpolatedValue
 
 def fitRainMinMaxScaler():
     cursor = db_config.cnx.cursor()
@@ -88,12 +88,23 @@ def getFeatureForTime(timestamp, riverData, riverScaler, rainScaler):
     Pricip4Hour = getRainLevelDataForTime(timestamp - 3600 * 4, riverData, rainScaler)
     Pricip5Hour = getRainLevelDataForTime(timestamp - 3600 * 5, riverData, rainScaler)
     Pricip6Hour = getRainLevelDataForTime(timestamp - 3600 * 6, riverData, rainScaler)
+    Pricip7Hour = getRainLevelDataForTime(timestamp - 3600 * 7, riverData, rainScaler)
+    Pricip8Hour = getRainLevelDataForTime(timestamp - 3600 * 8, riverData, rainScaler)
+    Pricip9Hour = getRainLevelDataForTime(timestamp - 3600 * 9, riverData, rainScaler)
+    Pricip10Hour = getRainLevelDataForTime(timestamp - 3600 * 10, riverData, rainScaler)
+    Pricip11Hour = getRainLevelDataForTime(timestamp - 3600 * 11, riverData, rainScaler)
     RiverLevel1HourAgo = getRiverLevelData(timestamp - 3600 * 1, riverData, riverScaler)
     RiverLevel2HourAgo = getRiverLevelData(timestamp - 3600 * 2, riverData, riverScaler)
     RiverLevel3HourAgo = getRiverLevelData(timestamp - 3600 * 3, riverData, riverScaler)
     RiverLevel4HourAgo = getRiverLevelData(timestamp - 3600 * 4, riverData, riverScaler)
     RiverLevel5HourAgo = getRiverLevelData(timestamp - 3600 * 5, riverData, riverScaler)
     RiverLevel6HourAgo = getRiverLevelData(timestamp - 3600 * 6, riverData, riverScaler)
+    RiverLevel7HourAgo = getRiverLevelData(timestamp - 3600 * 7, riverData, riverScaler)
+    RiverLevel8HourAgo = getRiverLevelData(timestamp - 3600 * 8, riverData, riverScaler)
+    RiverLevel9HourAgo = getRiverLevelData(timestamp - 3600 * 9, riverData, riverScaler)
+    RiverLevel10HourAgo = getRiverLevelData(timestamp - 3600 * 10, riverData, riverScaler)
+    RiverLevel11HourAgo = getRiverLevelData(timestamp - 3600 * 11, riverData, riverScaler)
+    RiverLevel12HourAgo = getRiverLevelData(timestamp - 3600 * 11, riverData, riverScaler)
     print(timestamp)
     actual = getRiverLevelData(timestamp, riverData, riverScaler)
 
@@ -104,12 +115,24 @@ def getFeatureForTime(timestamp, riverData, riverScaler, rainScaler):
     Pricip3Hour,
     Pricip4Hour,
     Pricip5Hour,
+    Pricip6Hour,
+    Pricip7Hour,
+    Pricip8Hour,
+    Pricip9Hour,
+    Pricip10Hour,
+    Pricip11Hour,
     RiverLevel1HourAgo,
     RiverLevel2HourAgo,
     RiverLevel3HourAgo,
     RiverLevel4HourAgo,
     RiverLevel5HourAgo,
     RiverLevel6HourAgo,
+    RiverLevel7HourAgo,
+    RiverLevel8HourAgo,
+    RiverLevel9HourAgo,
+    RiverLevel10HourAgo,
+    RiverLevel11HourAgo,
+    RiverLevel12HourAgo
     ], actual
 
 def getLatestTimestamp(areaId, riverId):

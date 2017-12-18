@@ -7,6 +7,9 @@ from matplotlib import pyplot
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
+from keras.optimizers import Adam
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LogisticRegression
 from math import sqrt
 from numpy import concatenate
 from sklearn.metrics import mean_squared_error
@@ -29,6 +32,7 @@ def train(riverId, configId=1, data=None):
     print(len(data[0]))
     data_X = data[0]
     data_y = data[1]
+
     rainScaler = data[2]
     riverScaler = data[3]
 
@@ -46,12 +50,13 @@ def train(riverId, configId=1, data=None):
 
     # design network
     model = Sequential()
-    model.add(LSTM(100, input_shape=(train_X.shape[1], train_X.shape[2])))
+    model.add(LSTM(300, input_shape=(train_X.shape[1], train_X.shape[2])))
     model.add(Dense(1))
-    model.compile(loss='mae', optimizer='adam')
+    adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+    model.compile(loss='mae', optimizer=adam)
 
     # fit network
-    history = model.fit(train_X, train_y, epochs=100, batch_size=72, validation_data=(test_X, test_y), verbose=0, shuffle=False)
+    history = model.fit(train_X, train_y, epochs=200, batch_size=72, validation_data=(test_X, test_y), verbose=1, shuffle=False)
     # plot history
     # plot history
     pyplot.plot(history.history['loss'], label='train')
