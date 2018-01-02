@@ -143,7 +143,7 @@ def getRiverData(riverId):
 
 def updateTrainingDataFile(riverData):
     start = getLatestTimestamp(riverData['rain_radar_area_id'], riverData['id'])
-    end = start - (86400 * 7 * 2)
+    end = start - (86400 * 7 * 24)
     trainingData, outputValues, riverChangeScaler = getTrainingData(start, end, riverData)
 
     data = pickle.dumps([trainingData, outputValues, riverChangeScaler])
