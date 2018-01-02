@@ -112,7 +112,7 @@ def getPlaceName(river_id):
 
 def doWork():
     setLastRun()
-    getClimendo(1)
+    # getClimendo(1)
     date = datetime.now()
     images = []
     date = date.replace(hour=0, minute=0)
@@ -121,9 +121,9 @@ def doWork():
         result = tryToGetImage(dateToDo, 'Meteo', 50)
         if result:
             writeAreaValuesToForecastTable(result, dateToDo, 1)
-        result = tryToGetImage(dateToDo, 'WeatherOnline', 25)
-        if result:
-            writeAreaValuesToForecastTable(result, dateToDo, 3)
+        # result = tryToGetImage(dateToDo, 'WeatherOnline', 25)
+        # if result:
+        #     writeAreaValuesToForecastTable(result, dateToDo, 3)
 
 def setLastRun():
     cursor = db_config.cnx.cursor()

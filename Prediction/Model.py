@@ -32,10 +32,7 @@ def train(riverId, configId=1, data=None):
     print(len(data[0]))
     data_X = data[0]
     data_y = data[1]
-
-    rainScaler = data[2]
-    riverScaler = data[3]
-
+    print(np.array(data_X).shape)
     rng_state = np.random.get_state()
     np.random.shuffle(data_X)
     np.random.set_state(rng_state)
@@ -50,13 +47,13 @@ def train(riverId, configId=1, data=None):
 
     # design network
     model = Sequential()
-    model.add(LSTM(300, input_shape=(train_X.shape[1], train_X.shape[2])))
+
+    model.add(LSTM(100, input_shape=(train_X.shape[1], train_X.shape[2])))
     model.add(Dense(1))
-    adam = Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-    model.compile(loss='mae', optimizer=adam)
+    model.compile(loss='mae', optimizer='adam', metrics=['mae', 'acc'])
 
     # fit network
-    history = model.fit(train_X, train_y, epochs=200, batch_size=72, validation_data=(test_X, test_y), verbose=1, shuffle=False)
+    history = model.fit(train_X, train_y, epochs=1, batch_size=18, validation_data=(test_X, test_y), verbose=1, shuffle=True)
     # plot history
     # plot history
     pyplot.plot(history.history['loss'], label='train')
@@ -65,19 +62,8 @@ def train(riverId, configId=1, data=None):
     pyplot.show()
     # make a prediction
     yhat = model.predict(test_X)
-    test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
-    # invert scaling for forecast
-    inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
-    inv_yhat = inv_yhat[:,0]
-    # invert scaling for actual
-    test_y = test_y.reshape((len(test_y), 1))
-    inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
-    inv_y = inv_y[:,0]
-    # calculate RMSE
-    rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
-    print('Test RMSE: %.3f' % rmse)
 
-    robModel = RobModel(riverId, configId).set_model(model, rainScaler, riverScaler).save()
+    robModel = RobModel(riverId, configId).set_model(model).save()
     return robModel
 
 def getConfig(id):

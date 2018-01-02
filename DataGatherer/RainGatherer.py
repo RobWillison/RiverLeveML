@@ -69,7 +69,8 @@ def doWork():
     startDate = getLastUpdate()
     endDate = datetime.now()
     diff = endDate - startDate
-    for i in range(int(diff.seconds / 3600)):
+    seconds = (diff.days * 86400) + diff.seconds
+    for i in range(int(seconds / 3600)):
         day = endDate - timedelta(hours = i + 1)
         print(day)
         getHour(day)

@@ -5,8 +5,6 @@ import numpy as np
 
 class RobModel:
     model = None
-    rainScaler = None
-    riverScaler = None
     riverId = None
     configId = None
 
@@ -14,46 +12,36 @@ class RobModel:
         self.riverId = riverId
         self.configId = configId
 
-    def set_model(self, model, rainScaler, riverScaler):
+    def set_model(self, model):
         self.model = model
-        self.rainScaler = rainScaler
-        self.riverScaler = riverScaler
         return self
 
     def load(self):
         cursor = db_config.cnx.cursor()
-        sql = 'SELECT model_path, scalers FROM models WHERE model_config_id = %s AND river_id = %s ORDER BY id desc LIMIT 1'
+        sql = 'SELECT model_path FROM models WHERE model_config_id = %s AND river_id = %s ORDER BY id desc LIMIT 1'
         cursor.execute(sql, (self.configId, self.riverId))
         result = cursor.fetchone()
-        scalers = pickle.loads(result['scalers'])
         self.model = load_model(result['model_path'])
-        self.rainScaler = scalers[0]
-        self.riverScaler = scalers[1]
         return self
 
 
     def save(self):
         path = 'Data/Models/river' + str(self.riverId) + '-' + str(self.configId) + '.h5'
         self.model.save(path)
-        scalers = [self.rainScaler, self.riverScaler]
-        scalers = pickle.dumps(scalers)
-
-        self.add_model(path, scalers)
+        self.add_model(path)
 
         cursor = db_config.cnx.cursor()
 
         return self
 
-    def add_model(self, path, scalers):
+    def add_model(self, path):
         cursor = db_config.cnx.cursor()
-        sql = 'REPLACE INTO models (river_id, model_config_id, model_path, scalers, created_at, updated_at) VALUES (%s, %s, %s, %s, NOW(), NOW())'
-        cursor.execute(sql, (self.riverId, self.configId, path, scalers))
+        sql = 'REPLACE INTO models (river_id, model_config_id, model_path, created_at, updated_at) VALUES (%s, %s, %s, NOW(), NOW())'
+        cursor.execute(sql, (self.riverId, self.configId, path))
         db_config.cnx.commit()
 
     def predict(self, feature):
         print(feature)
-        # scaledRain = list(map(lambda x: self.rainScaler.transform([[x]])[0][0], feature[:12]))
-        # scaledRiver = list(map(lambda x: self.riverScaler.transform([[x]])[0][0], feature[12:]))
-        # scaledFeature = scaledRain + scaledRiver
-        prediction = self.model.predict(np.array([[feature]]))
-        return prediction[0][0]
+        prediction = self.model.predict(np.array([feature]))[0][0]
+        print(prediction)
+        return prediction
