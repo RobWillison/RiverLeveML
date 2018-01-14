@@ -47,7 +47,7 @@ def train(riverId, configId=1, data=None):
 
     # design network
     model = Sequential()
-
+    print(train_X.shape)
     model.add(LSTM(200, input_shape=(train_X.shape[1], train_X.shape[2])))
     model.add(Dense(1))
     model.compile(loss='mae', optimizer='adam', metrics=['mae', 'acc'])

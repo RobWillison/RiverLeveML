@@ -149,10 +149,14 @@ def getRainLevelDataForecast(start, end, riverData):
 def getFeatureForTime(timestamp, riverData, previousRiverLevels):
     Pricip1Hour = getRainLevelDataForTime(timestamp - 3600, riverData)
     RiverLevel1HourAgo = previousRiverLevels[-1]
+    PricipDay = sum(previousRiverLevels[-24:])
+    PricipWeek = sum(previousRiverLevels[(-24 * 7):])
 
     return [
-    Pricip1Hour,
-    RiverLevel1HourAgo,
+        Pricip1Hour,
+        RiverLevel1HourAgo,
+        PricipDay,
+        PricipWeek
     ]
 
 def getFeatureSetForTime(timestamp, riverData, previousRiverLevels):

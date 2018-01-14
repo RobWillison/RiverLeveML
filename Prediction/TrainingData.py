@@ -3,7 +3,7 @@ import pickle
 import db_config
 from sklearn.preprocessing import MinMaxScaler
 
-def getRiverLevelData(timestamp, riverData, scaler):
+def getRiverLevelData(timestamp, riverData):
     cursor = db_config.cnx.cursor()
     sqlBefore = "SELECT * FROM rainData.river_data WHERE `timestamp` < %s AND river_id = %s ORDER BY `timestamp` DESC LIMIT 1"
     sqlAfter = "SELECT * FROM rainData.river_data WHERE `timestamp` > %s AND river_id = %s ORDER BY `timestamp` ASC LIMIT 1"
@@ -23,7 +23,7 @@ def getRiverLevelData(timestamp, riverData, scaler):
 
     return interpolatedValue
 
-def getRainLevelDataForTime(timestamp, riverData, scaler):
+def getRainLevelDataForTime(timestamp, riverData):
     cursor = db_config.cnx.cursor()
     sqlBefore = "SELECT * FROM rainData.rain_data WHERE `timestamp` < %s AND area_id = %s ORDER BY `timestamp` DESC LIMIT 1"
     sqlAfter = "SELECT * FROM rainData.rain_data WHERE `timestamp` > %s AND area_id = %s ORDER BY `timestamp` ASC LIMIT 1"
@@ -42,6 +42,17 @@ def getRainLevelDataForTime(timestamp, riverData, scaler):
         (timestamp - resultBefore['timestamp'])
 
     return interpolatedValue
+
+def averageRainBetween(start, end, riverData):
+    cursor = db_config.cnx.cursor()
+    sqlBefore = "SELECT SUM(rain_value) / COUNT(rain_value) as average FROM rainData.rain_data WHERE `timestamp` BETWEEN %s AND %s AND area_id = %s"
+
+    cursor.execute(sqlBefore, (start, end, riverData['rain_radar_area_id']))
+    resultBefore = cursor.fetchone()
+    if resultBefore['average'] == None:
+        raise 'None Error'
+    return resultBefore['average']
+
 
 def fitRainMinMaxScaler():
     cursor = db_config.cnx.cursor()
@@ -86,23 +97,28 @@ def fitRiverLevelMinMaxScaler(station):
 # fourMonthsBeforeQ
 # fourMonthsBeforeBeforeP
 
-def getFeatureForTime(timestamp, riverData, riverScaler, rainScaler):
+def getFeatureForTime(timestamp, riverData):
 
-    Pricip1Hour = getRainLevelDataForTime(timestamp + 3600, riverData, rainScaler)
-    RiverLevel1HourAgo = getRiverLevelData(timestamp - 3600 * 1, riverData, riverScaler)
+    Pricip1Hour = getRainLevelDataForTime(timestamp + 3600, riverData)
+    PricipDay = averageRainBetween(timestamp - 3600 * 24, timestamp, riverData)
+    PricipWeek = averageRainBetween(timestamp - 3600 * 24 * 7, timestamp, riverData)
 
-    actual = getRiverLevelData(timestamp, riverData, riverScaler)
+    RiverLevel1HourAgo = getRiverLevelData(timestamp - 3600 * 1, riverData)
+    actual = getRiverLevelData(timestamp, riverData)
+
 
     return [
     Pricip1Hour,
     RiverLevel1HourAgo,
+    PricipDay,
+    PricipWeek
     ], [actual]
 
 def getFeatureSetForTime(timestamp, riverData, riverScaler, rainScaler):
     featureSet = []
 
     for i in range(8):
-        feature, actual = getFeatureForTime(timestamp - 3600 * i, riverData, riverScaler, rainScaler)
+        feature, actual = getFeatureForTime(timestamp - 3600 * i, riverData)
         featureSet.append(feature)
 
     return featureSet, actual
@@ -143,7 +159,7 @@ def getRiverData(riverId):
 
 def updateTrainingDataFile(riverData):
     start = getLatestTimestamp(riverData['rain_radar_area_id'], riverData['id'])
-    end = start - (86400 * 7 * 12)
+    end = start - (86400 * 24)
     trainingData, outputValues, riverChangeScaler = getTrainingData(start, end, riverData)
 
     data = pickle.dumps([trainingData, outputValues, riverChangeScaler])
@@ -156,13 +172,16 @@ def getTrainingData(start, end, riverData):
     outputValues = []
     rainScaler = fitRainMinMaxScaler()
     riverScaler = fitRiverLevelMinMaxScaler(riverData['station'])
-
+    numSteps = (start - end) / 3600
+    steps = 0
     #Max 8447
     while start > end:
         feature, actual = getFeatureSetForTime(start, riverData, riverScaler, rainScaler)
         start -= 3600
         trainingData.append(feature)
         outputValues.append(actual)
+        steps += 1
+        print(int((float(steps) / numSteps) * 100))
 
     changeScaler = fitRiverChangeScaler(outputValues)
     # outputValues = changeScaler.transform(outputValues)
