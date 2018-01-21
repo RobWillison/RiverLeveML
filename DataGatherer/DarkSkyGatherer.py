@@ -9,8 +9,8 @@ secret = 'f0baf96464bbca6b49a36d88f7c2675d'
 
 def allRivers(ids):
     cursor = db_config.cnx.cursor()
-    sql = 'SELECT * FROM rivers WHERE id IN (%s)'
-    cursor.execute(sql, (', '.join(str(x) for x in ids)))
+    sql = 'SELECT * FROM rivers WHERE id IN (' + ','.join(str(x) for x in ids) + ')'
+    cursor.execute(sql)
     return cursor.fetchall()
 
 def getJson(riverData, timestamp) :
