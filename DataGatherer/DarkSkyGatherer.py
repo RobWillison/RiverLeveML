@@ -4,12 +4,13 @@ from datetime import datetime, timedelta
 import time
 import json
 
+
 secret = 'f0baf96464bbca6b49a36d88f7c2675d'
 
-def allRivers():
+def allRivers(ids):
     cursor = db_config.cnx.cursor()
-    sql = 'SELECT * FROM rivers'
-    cursor.execute(sql)
+    sql = 'SELECT * FROM rivers WHERE id IN (%s)'
+    cursor.execute(sql, (', '.join(str(x) for x in ids)))
     return cursor.fetchall()
 
 def getJson(riverData, timestamp) :
@@ -33,12 +34,12 @@ def saveData(data, riverId):
         forecast = 1
 
     cursor = db_config.cnx.cursor()
-    sql = 'INSERT INTO dark_sky_data (river_id, timestamp, precip_intensicty, precip_probability, json, forecast) VALUES (%s, %s, %s, %s, %s, %s)'
-    cursor.execute(sql, (riverId, timestamp, precipIntensity, precipProbability, json.dumps(data), forecast))
+    sql = 'INSERT INTO dark_sky_data (river_id, timestamp, time_string, precip_intensicty, precip_probability, json, forecast) VALUES (%s, %s, %s, %s, %s, %s, %s)'
+    cursor.execute(sql, (riverId, timestamp, datetime.fromtimestamp(timestamp), precipIntensity, precipProbability, json.dumps(data), forecast))
     db_config.cnx.commit()
 
-def collectPastDay():
-    rivers = allRivers()
+def collectPastDay(ids):
+    rivers = allRivers(ids)
     now = datetime.now().replace(hour=0, minute=0)
     start = int(time.mktime(now.timetuple()))
     start -= 86400
@@ -46,9 +47,10 @@ def collectPastDay():
         getJson(river, start)
 
 
-def collectForecastData():
-    rivers = allRivers()
+def collectForecastData(ids):
+    rivers = allRivers(ids)
     for river in rivers:
         now = datetime.now().replace(hour=0, minute=0)
         now = int(time.mktime(now.timetuple()))
-        getJson(river, now)
+        for i in range(7):
+            getJson(river, now + ((3600 * 24) * i))
