@@ -88,7 +88,7 @@ def checkForUpdates():
 
     result = cursor.fetchone()
     dateNow = datetime.now()
-    lastDate = dateNow - timedelta(hours=600)
+    lastDate = result
 
     if result != None:
         lastDate = getLastRun()
