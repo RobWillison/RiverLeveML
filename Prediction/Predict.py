@@ -5,19 +5,6 @@ from Prediction import Model
 import numpy as np
 from scipy import signal
 
-sourceLevelMultipliers = []
-
-def butter_lowpass(cutoff, fs, order=5):
-    nyq = 0.5 * fs
-    normal_cutoff = cutoff / nyq
-    b, a = butter(order, normal_cutoff, btype='low', analog=False)
-    return b, a
-
-def butter_lowpass_filter(data, cutoff, fs, order=5):
-    b, a = butter_lowpass(cutoff, fs, order=order)
-    y = lfilter(b, a, data)
-    return y
-
 def getRiverLevelData(timestamp, riverData):
     cursor = db_config.cnx.cursor()
     sqlBefore = "SELECT * FROM rainData.river_data WHERE `timestamp` < %s AND river_id = %s ORDER BY `timestamp` DESC LIMIT 1"
@@ -30,13 +17,13 @@ def getRiverLevelData(timestamp, riverData):
     resultAfter = cursor.fetchone()
 
     if resultAfter == None:
-        print(timestamp, resultBefore['river_level'])
+
         return resultBefore['river_level']
 
     interpolatedValue = resultBefore['river_level'] + \
         ((resultBefore['river_level'] - resultAfter['river_level']) / (resultBefore['timestamp'] - resultAfter['timestamp'])) * \
         (timestamp - resultBefore['timestamp'])
-    print(timestamp, interpolatedValue)
+
     return interpolatedValue
 
 def getRainLevelDataForTime(timestamp, riverData):
@@ -149,24 +136,16 @@ def getRainLevelDataForecast(start, end, riverData):
 def getFeatureForTime(timestamp, riverData, previousRiverLevels):
     Pricip1Hour = getRainLevelDataForTime(timestamp - 3600, riverData)
     RiverLevel1HourAgo = previousRiverLevels[-1]
-    PricipDay = sum(previousRiverLevels[-24:])
-    PricipWeek = sum(previousRiverLevels[(-24 * 7):])
 
     return [
         Pricip1Hour,
-        RiverLevel1HourAgo,
-        PricipDay,
-        PricipWeek
+        RiverLevel1HourAgo
     ]
 
 def getFeatureSetForTime(timestamp, riverData, previousRiverLevels):
-    featureSet = []
+    feature = getFeatureForTime(timestamp - 3600, riverData, previousRiverLevels)
 
-    for i in range(8):
-        feature = getFeatureForTime(timestamp - 3600 * i, riverData, previousRiverLevels)
-        featureSet.append(feature)
-
-    return featureSet
+    return feature
 
 def predictNextStep(previousRiverLevels, time, model, riverData):
 
@@ -189,7 +168,6 @@ def predictNext7days(riverLevels, timestamps, start, riverData, model):
         #rain.append(getRainLevelData(start + step * i - 3600, start + step * i))
         # print(predictedRiverLevel)
         riverLevels.append(predictedRiverLevel)
-        print(predictedRiverLevel)
     return riverLevels, timestamps
 
 def loadPreviousData(start, riverData):
@@ -208,7 +186,7 @@ def loadPreviousData(start, riverData):
     riverLevels = list(riverDataPrevMonth[::-1])
     # rainLevels = list(rainDataPrevMonth[::-1])
     actualLevels = list(riverDataPrevMonth[::-1])
-    print(riverLevels)
+
     timestamps = timestamps[::-1]
 
     return riverLevels, actualLevels, timestamps
@@ -231,7 +209,7 @@ def writePredictionToDb(riverLevels, timestamps, start, riverData, live):
     predictRunTime = datetime.now()
     cursor = db_config.cnx.cursor()
     sql = "INSERT INTO predictions (created_date, model_id, river_id, live) VALUES (%s, %s, %s, %s)"
-    print(riverData)
+
     cursor.execute(sql, (predictRunTime, riverData['model_id'], riverData['id'], live))
     prediction_id = cursor.lastrowid
 
@@ -244,7 +222,7 @@ def writePredictionToDb(riverLevels, timestamps, start, riverData, live):
         db_config.cnx.commit()
 
 def getRiverData(riverId, configId):
-    print(riverId, configId)
+
     cursor = db_config.cnx.cursor()
     sql = 'SELECT *, models.id as `model_id` FROM rivers INNER JOIN models ON models.river_id = rivers.id AND model_config_id = %s WHERE rivers.id = %s ORDER BY models.id DESC LIMIT 1'
     cursor.execute(sql, (configId, riverId))
@@ -253,16 +231,16 @@ def getRiverData(riverId, configId):
 def predict(riverId, configId=1, live=1, model=None, start=None):
     deleteOldPrediction(riverId)
     riverData = getRiverData(riverId, configId)
-    print(riverData)
+
     if start == None:
         start = getLatestTimestamp(riverData)
-    print(start)
+
     riverLevels = []
     timestamps = []
     riverLevels, actualLevels, timestamps = loadPreviousData(start, riverData)
 
     if model == None:
-        model = Model.getModel(riverId, configId)
+        model = Model.train(riverData)
 
     riverLevels, timestamps = predictNext7days(riverLevels, timestamps, start, riverData, model)
     writePredictionToDb(riverLevels, timestamps, start, riverData, live)
